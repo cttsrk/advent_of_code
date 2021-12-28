@@ -75,14 +75,14 @@ fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
 }
 
 fn main() {
-    // Parse input, solve part 1
     let (list, mut map) = parse(include_str!("../circuit.txt"));
-    let (key, pin) = ("a", "b");
+    let (key,  pin)     = ("a", "b");
+
     let part1 = solve(key, &mut map);
 
-    // Clear cache, pin wire "b", solve part 2
     for wire in list { if let Some(w) = map.get_mut(wire) { w.result = None; } }
     if let Some(w) = map.get_mut(pin) { w.result = Some(part1); }
+
     let part2 = solve(key, &mut map);
 
     println!("Part 1: Wire 'a' outputs {}", part1);
