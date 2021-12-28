@@ -22,28 +22,24 @@
 
 use std::collections::HashMap;
 
-#[derive(Debug)]
-struct Instr<'a>{
+struct Instr<'a> {
     result: Option<u16>,
-    op:  Option<&'a str>,
-    in1: Option<&'a str>,
-    in2: Option<&'a str>,
+    op:     Option<&'a str>,
+    val1:   Option<&'a str>,
+    val2:   Option<&'a str>,
 }
 
-fn parse(circuit: &str) -> (Vec<&str>, HashMap<&str, Instr>) {
-    let mut list = Vec::new();
-    let mut map  = HashMap::new();
-
-    // Parse lines of the format "in1 op in2 -> wire". Valid input can omit the
-    // first one or two fields, so reverse the order.
+fn parse(circuit: &'static str, mut list: Vec<&'static str>, mut map: HashMap<&'static str, Instr<'static>>) -> (Vec<&'static str>, HashMap<&'static str, Instr<'static>>) {
+    // Parse a line of the format "in1 op in2 -> out". Valid input can omit
+    // the first two fields, so reverse the order first.
     for line in circuit.lines() {
-        let mut fields = line.split(' ').rev();
+        let mut a = line.split(' ').rev();
 
-        let (wire, _)      = (fields.next().unwrap(), fields.next());
-        let (in2, op, in1) = (fields.next(), fields.next(), fields.next());
-                                                                                                                                                                 
-        list.push(wire.clone());
-        map.insert(wire, Instr { result: None, op: op, in1: in1, in2: in2 });
+        let (wire, _)    = (a.next().unwrap(), a.next());
+        let (v2, op, v1) = (a.next(), a.next(), a.next());
+
+        list.push(wire);
+        map.insert(wire, Instr { result: None, op: op, val1: v1, val2: v2 });
     }
 
     (list, map)
@@ -52,23 +48,23 @@ fn parse(circuit: &str) -> (Vec<&str>, HashMap<&str, Instr>) {
 fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
     // Checking for the direct value base case here seems simpler than dealing
     // with multi-type fields in the Instr struct.
-    if let Ok(value) = wire.parse::<u16>() { return value; }
+    if let Ok(val) = wire.parse::<u16>() { return val; }
 
     // Check if this wire is already solved. An else branch could be used here
     // to guard against circular dependencies by checking for a seen bool.
     if let Some(result) = map[wire].result { return result; }
 
-    let (mut val1, mut val2) = (0, 0);
-    if let Some(val) = map[wire].in1 { val1 = solve(val, &mut map); }
-    if let Some(val) = map[wire].in2 { val2 = solve(val, &mut map); }
+    let (mut v1, mut v2) = (0, 0);
+    if let Some(val) = map[wire].val1 { v1 = solve(val, &mut map); }
+    if let Some(val) = map[wire].val2 { v2 = solve(val, &mut map); }
 
     let result = match map[wire].op {
-        Some("AND")    => val1 & val2,
-        Some("OR")     => val1 | val2,
-        Some("NOT")    => ! val2,
-        Some("RSHIFT") => val1 >> val2,
-        Some("LSHIFT") => val1 << val2,
-        None           => val2,
+        Some("AND")    => v1 & v2,
+        Some("OR")     => v1 | v2,
+        Some("NOT")    => ! v2,
+        Some("RSHIFT") => v1 >> v2,
+        Some("LSHIFT") => v1 << v2,
+        None           => v2,
                      _ => panic!("Invalid input")
     };
 
@@ -78,16 +74,19 @@ fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
 }
 
 fn main() {
-    let circuit = include_str!("../circuit.txt");      // Compile time include
-    let (list, mut map) = parse(circuit);
+    let circuit  = include_str!("../circuit.txt");
+    let list = Vec::new();
+    let map  = HashMap::new();
+    
+    let (list, mut map) = parse(circuit, list, map);
 
-    let key   = "a";
+    let (key, pin) = ("a", "b");
     let part1 = solve(key, &mut map);
 
-    // Clear saved results
-    for w in list { if let Some(wire) = map.get_mut(w) { wire.result = None; } }
+    for w in list {
+        if let Some(wire) = map.get_mut(w) { wire.result = None; }
+    }
 
-    let pin = "b";
     if let Some(wire) = map.get_mut(pin) { wire.result = Some(part1); }
     let part2 = solve(key, &mut map);
 
