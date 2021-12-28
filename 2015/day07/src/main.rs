@@ -30,13 +30,13 @@ fn parse(circuit: &str) -> (Vec<&str>, HashMap<&str, Instr>) {
     // Parse lines of the format "in1 op in2 -> wire". Valid input can omit the
     // first one or two fields, so reverse the order.
     for line in circuit.lines() {
-        let mut fields = line.split(' ').rev();
+        let mut l = line.split(' ').rev();
 
-        let (wire, _)      = (fields.next().unwrap(), fields.next());
-        let (in2, op, in1) = (fields.next(), fields.next(), fields.next());
+        let (key, _)       = (l.next().unwrap(), l.next());
+        let (in2, op, in1) = (l.next(), l.next(), l.next());
                                                                                                                                                                  
-        list.push(wire.clone());
-        map.insert(wire, Instr { result: None, op: op, in1: in1, in2: in2 });
+        list.push(key.clone());
+        map.insert(key, Instr { result: None, op: op, in1: in1, in2: in2 });
     }
 
     (list, map)
@@ -68,7 +68,7 @@ fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
     };
 
     // This wire has been solved for the first time, cache the result for re-use
-    // when other paths through the circuit reach this wire.
+    // as other paths through the circuit reach this wire.
     if let Some(w) = map.get_mut(wire) { w.result = Some(result); }
 
     result
@@ -76,15 +76,16 @@ fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
 
 fn main() {
     let (list, mut map) = parse(include_str!("../circuit.txt"));
-    let (key,  pin)     = ("a", "b");
+    let (key, pin) = ("a", "b");
 
     let part1 = solve(key, &mut map);
 
+    // Clear cached results and pin wire b
     for wire in list { if let Some(w) = map.get_mut(wire) { w.result = None; } }
     if let Some(w) = map.get_mut(pin) { w.result = Some(part1); }
 
     let part2 = solve(key, &mut map);
 
-    println!("Part 1: Wire 'a' outputs {}", part1);
-    println!("Part 2: Pinning wire 'b' to {}, 'a' outputs {}.", part1, part2);
+    println!("Part1: Wire {} outputs {}", key, part1);
+    println!("Part2: Pinning {} to {}, {} outputs {}.", pin, part1, key, part2);
 }
