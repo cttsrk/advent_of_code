@@ -22,7 +22,6 @@
 
 use std::collections::HashMap;
 
-#[derive(Debug)]
 struct Instr<'a>{
     result: Option<u16>,
     op:  Option<&'a str>,
@@ -78,16 +77,15 @@ fn solve(wire: &str, mut map: &mut HashMap<&str, Instr>) -> u16 {
 }
 
 fn main() {
-    let circuit = include_str!("../circuit.txt");      // Compile time include
+    let circuit = include_str!("../circuit.txt");
     let (list, mut map) = parse(circuit);
 
-    let key   = "a";
+    let (key, pin) = ("a", "b");
     let part1 = solve(key, &mut map);
 
     // Clear saved results
     for w in list { if let Some(wire) = map.get_mut(w) { wire.result = None; } }
 
-    let pin = "b";
     if let Some(wire) = map.get_mut(pin) { wire.result = Some(part1); }
     let part2 = solve(key, &mut map);
 
